@@ -5,6 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Block Blast </title>
     <style>
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: var(--bg-color);
+            z-index: 50;
+        }
+
+        .menu-container.hidden {
+            display: none !important;
+        }
+
+        .menu-container h1 {
+            font-size: 50px;
+            color: #ff3366;
+            margin-bottom: 40px;
+            text-shadow: 0 4px 10px rgba(255, 51, 102, 0.4);
+            text-align: center;
+        }
+
+        .menu-btn {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: linear-gradient(135deg, #3399ff, #0066cc);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 8px 25px rgba(51, 153, 255, 0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        .level-grid {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 300px;
+        }
+
+        .level-btn {
+            width: 80px;
+            height: 80px;
+            font-size: 20px;
+            background: #2a2e40;
+            color: white;
+            border: 2px solid #3399ff;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        
+        .level-btn:active, .level-btn:hover {
+            background: #3399ff;
+        }
+
+        .game-ui {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            display: none;
+        }
+
+        .game-ui.active {
+            display: flex;
+        }
+
         :root {
             --bg-color: #0f111a;
             --board-bg: #1e2233;
@@ -224,21 +306,44 @@
 </head>
 <body>
 
-    <div class="header">
-        <div>Blast 2D</div>
-        <div class="score-box">Score: <span id="score">0</span></div>
+    <!-- Main Menu -->
+    <div class="menu-container" id="mainMenu">
+        <h1>Block Blast</h1>
+        <button class="menu-btn" onclick="showLevelSelect()">Play Game</button>
     </div>
 
-    <div class="board-wrapper">
-        <div class="board" id="board"></div>
+    <!-- Level Select -->
+    <div class="menu-container hidden" id="levelSelect">
+        <h1>Select Level</h1>
+        <div class="level-grid">
+            <button class="level-btn" onclick="startLevel(1)">1</button>
+            <button class="level-btn" onclick="startLevel(2)">2</button>
+            <button class="level-btn" onclick="startLevel(3)">3</button>
+            <button class="level-btn" onclick="startLevel(4)">4</button>
+            <button class="level-btn" onclick="startLevel(5)">5</button>
+            <button class="level-btn" onclick="startLevel(6)">6</button>
+        </div>
+        <button class="menu-btn" style="background: #444; box-shadow: none;" onclick="showMainMenu()">Back</button>
     </div>
 
-    <div class="tray" id="tray"></div>
+    <div class="game-ui" id="gameUI">
+        <div class="header">
+            <div style="cursor: pointer; color: #ccc; font-size: 20px; font-weight: 600;" onclick="showMainMenu()">&#8592; Back</div>
+            <div class="score-box">Score: <span id="score">0</span></div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="tray" id="tray"></div>
+    </div>
 
     <div class="modal hidden" id="gameOverModal">
         <h2>Out of Moves!</h2>
         <p>Final Score: <span id="finalScore">0</span></p>
         <button onclick="startGame()">Play Again</button>
+        <button style="margin-top: 15px; background: #444; box-shadow: none;" onclick="showMainMenu()">Main Menu</button>
     </div>
 
     <script>
@@ -281,6 +386,36 @@
         const scoreEl = document.getElementById('score');
         const modal = document.getElementById('gameOverModal');
         const finalScoreEl = document.getElementById('finalScore');
+        
+        let currentLevel = 1;
+
+        function showMainMenu() {
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('levelSelect').classList.add('hidden');
+            document.getElementById('gameUI').classList.remove('active');
+            modal.classList.add('hidden');
+        }
+
+        function showLevelSelect() {
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('levelSelect').classList.remove('hidden');
+        }
+
+        function startLevel(level) {
+            currentLevel = level;
+            document.getElementById('levelSelect').classList.add('hidden');
+            document.getElementById('gameUI').classList.add('active');
+            startGame();
+        }
+
+        function fillPattern(coords, color) {
+            coords.forEach(([r, c]) => {
+                board[r][c] = color;
+                let cell = boardCells[r*8 + c];
+                cell.style.backgroundColor = color;
+                cell.classList.add('filled');
+            });
+        }
 
         function initBoard() {
             boardEl.innerHTML = '';
@@ -571,11 +706,29 @@
             score = 0;
             updateScore();
             initBoard();
+
+            if (currentLevel === 2) {
+                const blocks = [[3,3], [3,4], [4,3], [4,4]]; 
+                fillPattern(blocks, '#ff9933');
+            } else if (currentLevel === 3) {
+                const blocks = [[0,0], [0,7], [7,0], [7,7], [3,3], [3,4], [4,3], [4,4]];
+                fillPattern(blocks, '#00ffff');
+            } else if (currentLevel === 4) {
+                const blocks = [[2,2], [2,3], [2,4], [2,5], [5,2], [5,3], [5,4], [5,5]];
+                fillPattern(blocks, '#33cc33');
+            } else if (currentLevel === 5) {
+                const blocks = [[1,1], [2,2], [3,3], [4,4], [5,5], [6,6], [1,6], [2,5], [5,2], [6,1]];
+                fillPattern(blocks, '#f03e3e');
+            } else if (currentLevel === 6) {
+                const blocks = [[0,3], [0,4], [1,2], [1,5], [2,1], [2,6], [3,0], [3,7], [4,0], [4,7], [5,1], [5,6], [6,2], [6,5], [7,3], [7,4]];
+                fillPattern(blocks, '#ff3366');
+            }
+            
             generateTray();
         }
 
         // Boot
-        startGame();
+        showMainMenu();
     </script>
 </body>
 </html>
